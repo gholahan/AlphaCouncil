@@ -1,0 +1,8 @@
+"""API v1 router aggregation."""
+
+from fastapi import APIRouter
+from src.entrypoints.api.v1.endpoints import documents
+
+api_router = APIRouter(prefix="/api/v1")
+
+api_router.include_router(documents.router)
