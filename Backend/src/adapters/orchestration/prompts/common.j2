@@ -1,0 +1,60 @@
+{# Common instructions shared across all agents #}
+
+{% macro citation_rules() %}
+## Citation Requirements
+
+Every factual claim MUST be supported by a citation:
+- **[REF:n]** for information from SEC filings (10-K, 10-Q) retrieved via RAG
+- **[WEB:n]** for information from web search results (breaking news, recent developments)
+- **[DATA:n]** for information from structured financial APIs (ratios, prices, statements)
+
+Example: "Dangote Cement reported revenue growth of 12% YoY [REF:3], driven by increased capacity utilization [REF:3] and favorable pricing dynamics in the Nigerian market [WEB:1]."
+
+Never make unsupported claims. If you lack data, explicitly state: "Unable to verify [claim] - data not available in current sources."
+{% endmacro %}
+
+{% macro tool_usage() %}
+## Available Tools
+
+You have access to the following tools:
+
+1. **retrieve_sec_filings(ticker, query, top_k)** - Semantic search over 10-K/10-Q filings
+   - Returns: Document chunks with [REF:n] citation markers
+
+2. **fetch_financial_ratios(ticker)** - Get live quote, 7-day high/low, volume, and momentum stats
+   - Returns: current_price, change_percent, volume, 7d_high, 7d_low, avg_7d_volume
+
+3. **web_search_financial_context(query, ticker, days_back)** - Live financial news
+   - Returns: Recent articles with [WEB:n] citation markers
+
+4. **get_cbn_rates()** - CBN monetary policy data
+   - Returns: MPR, inflation, FX rates, T-bill yields
+
+5. **run_dcf_model(free_cash_flow, growth_rate, terminal_growth, wacc, shares_outstanding, years)** - DCF valuation
+   - Returns: Fair value estimate with sensitivity analysis
+
+Use tools strategically. Call them when needed, cite the results.
+{% endmacro %}
+
+{% macro output_format() %}
+## Output Format
+
+Structure your argument as:
+
+### Executive Summary
+[2-3 sentence thesis statement]
+
+### Key Arguments
+1. **[Argument Title]**
+   - Evidence: [specific data with citations]
+   - Implication: [what this means for the investment]
+
+2. **[Argument Title]**
+   - Evidence: [specific data with citations]
+   - Implication: [what this means for the investment]
+
+[Continue with 3-5 key arguments]
+
+### Conclusion
+[Synthesize your case with confidence level: LOW/MEDIUM/HIGH]
+{% endmacro %}
