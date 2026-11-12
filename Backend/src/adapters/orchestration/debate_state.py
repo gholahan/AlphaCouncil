@@ -20,6 +20,7 @@ class DebateState(TypedDict):
     bull_case_outputs: Annotated[List[str], add]
     bear_case_outputs: Annotated[List[str], add]
     arbitrator_output: Optional[str]
+    chat_response: Optional[str]
 
     # Structured final verdict and recommendation
     verdict: Optional[str]  # "BUY", "CONDITIONAL_BUY", "HOLD", "SELL"

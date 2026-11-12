@@ -57,6 +57,7 @@ class SqlAlchemyDebateRepository(DebateRepository):
             "transcript": debate.transcript,
             "verdict": debate.verdict,
             "recommendation": debate.recommendation,
+            "chat_response": debate.chat_response,
             "created_at": debate.created_at.isoformat() if debate.created_at else None,
         }
 
@@ -76,6 +77,7 @@ class SqlAlchemyDebateRepository(DebateRepository):
         if debate:
             debate.verdict = verdict.get("verdict")
             debate.recommendation = verdict
+            debate.chat_response = verdict.get("chat_response")
             self.session.add(debate)
             await self.session.commit()
 
