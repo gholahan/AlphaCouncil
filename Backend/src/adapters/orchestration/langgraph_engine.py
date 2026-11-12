@@ -344,6 +344,7 @@ class LangGraphDebateEngine:
 
         return {
             "arbitrator_output": output_content,
+            "chat_response": structured_response.chat_response,
             "verdict": verdict,
             "recommendation": recommendation,
             "messages": [AIMessage(content=output_content, name="arbitrator")]
@@ -377,6 +378,7 @@ class LangGraphDebateEngine:
             "bull_case_outputs": [],
             "bear_case_outputs": [],
             "arbitrator_output": None,
+            "chat_response": None,
             "messages": [],
             "metadata": {},
             "round_count": 0,
@@ -395,6 +397,7 @@ class LangGraphDebateEngine:
             "verdict": result_state.get("verdict"),
             "recommendation": result_state.get("recommendation"),
             "arbitrator_output": result_state.get("arbitrator_output"),
+            "chat_response": result_state.get("chat_response"),
             "rounds_completed": result_state.get("round_count", 0),
             "messages": result_state.get("messages", []),
             "metadata": result_state.get("metadata", {}),

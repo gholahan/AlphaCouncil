@@ -120,6 +120,7 @@ class DebateTraceRecord(SQLModel, table=True):
     # Final verdict and structured recommendation
     verdict: str | None = Field(default=None, max_length=30)
     recommendation: dict | None = Field(default=None, sa_column=Column(JSON))
+    chat_response: str | None = Field(default=None, sa_column=Column(Text))
 
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

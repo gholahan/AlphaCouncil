@@ -60,4 +60,5 @@ class GetDebateResponse(BaseModel):
     transcript: List[Dict[str, Any]]
     verdict: Optional[str]
     recommendation: Optional[Dict[str, Any]]
+    chat_response: Optional[str] = None
     created_at: datetime

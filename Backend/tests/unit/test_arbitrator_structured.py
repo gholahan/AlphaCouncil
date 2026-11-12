@@ -211,6 +211,7 @@ async def test_arbitrator_node_enforces_structured_output():
     assert result["verdict"] == "BUY"
     assert result["recommendation"]["allocation"] > 0
     assert "arbitrator_output" in result
+    assert result["chat_response"] == valid_resp.chat_response
 
     parsed = json.loads(result["arbitrator_output"])
     assert parsed["verdict"] == "BUY"
