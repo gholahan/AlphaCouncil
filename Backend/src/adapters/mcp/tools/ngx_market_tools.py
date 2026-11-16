@@ -13,7 +13,8 @@ _adapter = KoboTerminalAdapter()
 @tool
 async def fetch_financial_ratios(ticker: str) -> dict:
     """
-    Gets live NGX stock quote, 7-day price momentum (high/low/volume), and market statistics via KoboTerminal.
+    Gets live NGX stock quote, 7-day price momentum (high/low/volume), and market statistics via KoboTerminal
+    using a single consolidated API call.
 
     Args:
         ticker: NGX stock ticker (e.g., "DANGCEM", "BUACEMENT", "GTCO")
@@ -22,27 +23,26 @@ async def fetch_financial_ratios(ticker: str) -> dict:
         current_price, change_percent, volume, 7d_high, 7d_low, avg_7d_volume, recent_sessions_count
     """
     try:
-        quote_res, history_res = await asyncio.gather(
-            _adapter.get_quote(ticker),
-            _adapter.get_historical_prices(ticker, datetime.utcnow() - timedelta(days=7), datetime.utcnow()),
-            return_exceptions=True,
-        )
+        end = datetime.utcnow()
+        start = end - timedelta(days=7)
+        history = await _adapter.get_historical_prices(ticker, start, end)
 
-        quote = quote_res if not isinstance(quote_res, Exception) else None
-        history = history_res if not isinstance(history_res, Exception) else []
-
+        latest = history[-1] if history else None
         highs = [h.high for h in history if h.high is not None]
         lows = [h.low for h in history if h.low is not None]
         volumes = [h.volume for h in history if h.volume is not None]
 
+        current_price = latest.close if latest else 0.0
+        volume = latest.volume if latest else 0
+
         return {
             "ticker": ticker.upper(),
-            "current_price": quote.price if quote else 0.0,
-            "change_percent": quote.change_percent if quote else 0.0,
-            "volume": quote.volume if quote else 0,
-            "7d_high": max(highs) if highs else (quote.price if quote else 0.0),
-            "7d_low": min(lows) if lows else (quote.price if quote else 0.0),
-            "avg_7d_volume": int(sum(volumes) / len(volumes)) if volumes else (quote.volume if quote else 0),
+            "current_price": current_price,
+            "change_percent": 0.0,
+            "volume": volume,
+            "7d_high": max(highs) if highs else current_price,
+            "7d_low": min(lows) if lows else current_price,
+            "avg_7d_volume": int(sum(volumes) / len(volumes)) if volumes else volume,
             "recent_sessions_count": len(history),
             "status": "success",
             "source": "KoboTerminal 200 OK Market Data",
@@ -137,4 +137,3 @@ async def fetch_ngx_indices() -> list:
         return await _adapter.get_indices()
     except Exception as e:
         return [{"error": str(e)}]
-

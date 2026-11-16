@@ -1,10 +1,12 @@
 """Test multiple CBN endpoints to find actual rate data."""
 
+import pytest
 import asyncio
 import httpx
 from bs4 import BeautifulSoup
 
 
+@pytest.mark.asyncio
 async def test_cbn_endpoints():
     """Test different CBN pages to find where rate data actually lives."""
 

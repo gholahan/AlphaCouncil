@@ -119,6 +119,7 @@ class RunInvestmentDebateUseCase:
             recommendation = debate_result.get("recommendation") or {}
             transcript = debate_result.get("messages", [])
             chat_response = debate_result.get("chat_response")
+            cio_report = debate_result.get("cio_report")
 
             bull_outputs = [
                 msg.content for msg in transcript
@@ -169,6 +170,7 @@ class RunInvestmentDebateUseCase:
                     "recommendation": recommendation,
                     "transcript": serialized_transcript,
                     "chat_response": chat_response,
+                    "cio_report": cio_report,
                 },
             )
             save_turns = (
@@ -192,6 +194,7 @@ class RunInvestmentDebateUseCase:
                 "verdict": verdict,
                 "recommendation": recommendation,
                 "chat_response": chat_response,
+                "cio_report": cio_report,
                 "transcript": serialized_transcript,
                 "bull_case_summary": "\n\n".join(bull_outputs) or "No bull case presented",
                 "bear_case_summary": "\n\n".join(bear_outputs) or "No bear case presented",

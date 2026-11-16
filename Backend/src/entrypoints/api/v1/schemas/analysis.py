@@ -61,4 +61,5 @@ class GetDebateResponse(BaseModel):
     verdict: Optional[str]
     recommendation: Optional[Dict[str, Any]]
     chat_response: Optional[str] = None
+    cio_report: Optional[Dict[str, Any]] = None
     created_at: datetime

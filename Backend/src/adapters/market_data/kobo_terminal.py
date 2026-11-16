@@ -26,6 +26,8 @@ class KoboTerminalAdapter(MarketDataProvider):
 
     def __init__(self, api_key: Optional[str] = None, timeout: float = _TIMEOUT):
         self.api_key = api_key or settings.KOBO_API_KEY
+        self._cache: Dict[str, tuple[Any, float]] = {}
+        self._ttl = 300.0  # 5 minutes evaluation cache
         self._client = httpx.AsyncClient(
             base_url=_BASE,
             headers={"X-API-Key": self.api_key or "", "Accept": "application/json"},
@@ -38,10 +40,20 @@ class KoboTerminalAdapter(MarketDataProvider):
         await self._client.aclose()
 
     async def _get(self, path: str, params: Optional[Dict] = None) -> Optional[Any]:
+        cache_key = f"{path}::{str(params)}"
+        now = datetime.now(timezone.utc).timestamp()
+        if cache_key in self._cache:
+            data, expiry = self._cache[cache_key]
+            if now < expiry:
+                logger.debug("[Kobo] Cache hit for %s", cache_key)
+                return data
+
         try:
             r = await self._client.get(path, params=params)
             r.raise_for_status()
-            return r.json()
+            data = r.json()
+            self._cache[cache_key] = (data, now + self._ttl)
+            return data
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 403:
                 logger.info("[Kobo] %s requires upgraded plan (403 - handled gracefully)", path)

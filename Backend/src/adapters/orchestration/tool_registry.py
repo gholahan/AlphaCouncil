@@ -13,6 +13,20 @@ from src.adapters.mcp.tools.ngx_market_tools import (
 from src.adapters.mcp.tools.cbn_scraper import get_cbn_fx_rates
 from src.adapters.mcp.tools.web_searcher import web_search_financial_context
 from src.adapters.mcp.tools.dcf_calculator import run_dcf_model
+from src.adapters.mcp.tools.financial_analysis_tools import (
+    calculate_financial_growth,
+    analyze_profitability,
+    analyze_financial_health,
+    analyze_cash_flow,
+    analyze_valuation,
+    compare_peer_valuation,
+    run_valuation_sensitivity,
+    analyze_downside_risk,
+    calculate_valuation_margin_of_safety,
+    analyze_debt_exposure,
+)
+from src.adapters.mcp.tools.investment_planning_tools import calculate_investment_plan
+from src.adapters.mcp.tools.monitoring_tools import generate_monitoring_indicators
 
 
 TOOL_MAP: Dict[str, Any] = {
@@ -25,6 +39,18 @@ TOOL_MAP: Dict[str, Any] = {
     "get_cbn_fx_rates": get_cbn_fx_rates,
     "web_search_financial_context": web_search_financial_context,
     "run_dcf_model": run_dcf_model,
+    "calculate_financial_growth": calculate_financial_growth,
+    "analyze_profitability": analyze_profitability,
+    "analyze_financial_health": analyze_financial_health,
+    "analyze_cash_flow": analyze_cash_flow,
+    "analyze_valuation": analyze_valuation,
+    "compare_peer_valuation": compare_peer_valuation,
+    "run_valuation_sensitivity": run_valuation_sensitivity,
+    "analyze_downside_risk": analyze_downside_risk,
+    "calculate_valuation_margin_of_safety": calculate_valuation_margin_of_safety,
+    "analyze_debt_exposure": analyze_debt_exposure,
+    "calculate_investment_plan": calculate_investment_plan,
+    "generate_monitoring_indicators": generate_monitoring_indicators,
 }
 
 _ROLE_TOOLS: Dict[str, List[str]] = {
@@ -36,6 +62,13 @@ _ROLE_TOOLS: Dict[str, List[str]] = {
         "get_ngx_market_overview",
         "fetch_ngx_indices",
         "web_search_financial_context",
+        "calculate_financial_growth",
+        "analyze_profitability",
+        "analyze_cash_flow",
+        "analyze_valuation",
+        "compare_peer_valuation",
+        "run_dcf_model",
+        "run_valuation_sensitivity",
     ],
     "bear_analyst": [
         "retrieve_financial_insights",
@@ -45,11 +78,22 @@ _ROLE_TOOLS: Dict[str, List[str]] = {
         "get_ngx_market_overview",
         "fetch_ngx_indices",
         "web_search_financial_context",
+        "analyze_financial_health",
+        "analyze_debt_exposure",
+        "analyze_cash_flow",
+        "analyze_downside_risk",
+        "calculate_valuation_margin_of_safety",
+        "compare_peer_valuation",
+        "run_dcf_model",
+        "run_valuation_sensitivity",
     ],
     "arbitrator": [
         "fetch_financial_ratios",
         "get_cbn_fx_rates",
         "run_dcf_model",
+        "run_valuation_sensitivity",
+        "calculate_investment_plan",
+        "generate_monitoring_indicators",
     ],
 }
 

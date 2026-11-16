@@ -18,7 +18,7 @@ Your job: Find evidence from financial statements, ratios, and news that support
 Your job: Build a compelling investment case from the ground up using the retrieved financial data.
 {% endif %}
 
-**What to search for:**
+**What to analyze:**
 - Revenue growth trends (YoY, QoQ), margin expansion, operating leverage
 - Balance sheet strength: cash position, debt levels, working capital
 - Competitive position: market share, pricing power, barriers to entry
@@ -31,8 +31,13 @@ Your job: Build a compelling investment case from the ground up using the retrie
 2. `fetch_financial_ratios(ticker)` — live NGX stock quote, change %, volume, 7-day high/low, and average volume
 3. `fetch_dividend_history(ticker)` — dividend per share history (yield trend, payout consistency)
 4. `fetch_price_history(ticker)` — last 7 trading sessions OHLCV (momentum, recent trend)
-5. `get_ngx_market_overview()` — ASI level, market cap, total volume (relative performance context)
-6. `web_search_financial_context(query, ticker)` — recent news (Nairametrics, BusinessDay, Bloomberg)
+5. `calculate_financial_growth(...)` — calculate revenue and earnings YoY growth
+6. `analyze_profitability(...)` — analyze gross margin, net profit margin, ROE, ROA
+7. `analyze_cash_flow(...)` — evaluate FCF and cash conversion
+8. `analyze_valuation(...)` — evaluate P/E, P/B, EV/EBITDA multiples
+9. `run_dcf_model(...)` — run discounted cash flow valuation model
+10. `run_valuation_sensitivity(...)` — test valuation under various assumptions
+11. `web_search_financial_context(query, ticker)` — recent news (Nairametrics, BusinessDay, Bloomberg)
 
 **Evidence requirements (CRITICAL):**
 - Every claim MUST have a citation ([REF:n] or [WEB:n])
