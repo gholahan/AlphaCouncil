@@ -6,7 +6,7 @@ from src.adapters.celery.tasks.base import AsyncTask
 from src.adapters.ingestion.pdf_downloader import PDFDownloader
 from src.adapters.ingestion.pdf_extractor import PDFExtractorAdapter
 from src.domain.services.chunking import ChunkingService
-from src.adapters.embeddings.voyage_ai import VoyageAIEmbeddingAdapter
+from src.adapters.embeddings.voyage_embedding import VoyageAIEmbeddingAdapter
 from src.adapters.storage.vector_store import PgVectorStore
 from src.adapters.storage.repository import SQLModelCompanyRepository
 from src.application.use_cases.ingest_company import IngestCompanyDocumentUseCase

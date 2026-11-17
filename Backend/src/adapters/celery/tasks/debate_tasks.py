@@ -3,7 +3,8 @@
 from typing import Dict, Any
 from src.adapters.celery.app import celery_app
 from src.adapters.celery.tasks.base import AsyncTask
-from src.adapters.embeddings.voyage_ai import VoyageAIEmbeddingAdapter
+from src.adapters.embeddings.voyage_embedding import VoyageAIEmbeddingAdapter
+from src.adapters.embeddings.voyage_reranker import VoyageRerankerAdapter
 from src.adapters.storage.vector_store import PgVectorStore
 from src.adapters.storage.repository import SQLModelCompanyRepository, SQLModelDebateRepository, SQLModelDebateTurnRepository
 from src.application.use_cases.query_financial_data import QueryFinancialDataUseCase
@@ -23,10 +24,11 @@ async def run_investment_debate(
     max_rounds: int = 3,
 ) -> Dict[str, Any]:
     """
-    Background task: Run MAD (Multi Agent Debate) investment analysis.
+    Background task: Run MAD (Multi Agent Debate) investment analysis with Voyage Reranking.
     """
     embedding_service = VoyageAIEmbeddingAdapter(api_key=settings.VOYAGE_API_KEY)
     vector_store = PgVectorStore(database_url=settings.DATABASE_URL)
+    reranker_service = VoyageRerankerAdapter(api_key=settings.VOYAGE_API_KEY)
     company_repo = SQLModelCompanyRepository(database_url=settings.DATABASE_URL)
     debate_repo = SQLModelDebateRepository(database_url=settings.DATABASE_URL)
     turn_repo = SQLModelDebateTurnRepository(database_url=settings.DATABASE_URL)
@@ -39,6 +41,7 @@ async def run_investment_debate(
     query_financial_data = QueryFinancialDataUseCase(
         embedding_service=embedding_service,
         vector_store=vector_store,
+        reranker_service=reranker_service,
     )
 
     use_case = RunInvestmentDebateUseCase(
