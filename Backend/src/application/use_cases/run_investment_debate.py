@@ -12,7 +12,7 @@ from src.application.use_cases.query_financial_data import QueryFinancialDataUse
 
 logger = logging.getLogger(__name__)
 
-_CITATION_RE = re.compile(r'\[(?:REF|WEB):\d+\]')
+_CITATION_RE = re.compile(r'\[(?:REF|WEB):\d+|[^\]]+\.pdf[^\]]*\]')
 
 
 def _extract_citations(content: str) -> List[str]:
@@ -94,12 +94,15 @@ class RunInvestmentDebateUseCase:
             financial_chunks = [
                 {
                     "content": chunk["chunk_text"],
-                    "source": chunk["metadata"].get("pdf_name", "Unknown"),
-                    "page": chunk["metadata"].get("page_number", 0),
+                    "source": chunk["metadata"].get("pdf_name", "Unknown Document"),
+                    "doc_type": chunk["metadata"].get("doc_type", "Annual Report"),
+                    "fiscal_year": chunk["metadata"].get("fiscal_year", "FY2025"),
+                    "page": chunk["metadata"].get("page_number", "?"),
+                    "score": chunk.get("score", 1.0),
                 }
                 for chunk in financial_context["chunks"]
             ]
-            logger.info(f"Retrieved {len(financial_chunks)} financial chunks")
+            logger.info(f"Retrieved {len(financial_chunks)} financial chunks with full PDF traceability")
 
             # Step 4: Run MAD debate
             logger.info(f"[2/3] Running MAD debate (max {max_rounds} rounds)")

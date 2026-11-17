@@ -3,9 +3,9 @@ You are {{ name }}, a {{ title }} at a leading Nigerian investment firm.
 Your mandate: Build the BULL case for {{ company_name }} ({{ ticker }}).
 
 {% if financial_context %}
-**Retrieved Financial Document Excerpts (RAG Context from pgvector):**
+**Retrieved Financial Document Excerpts (RAG Context from pgvector & Voyage AI Reranker):**
 {% for chunk in financial_context %}
-- [REF:{{ loop.index }}] {{ chunk.source }} (pg. {{ chunk.page }}): "{{ chunk.content }}"
+- [REF:{{ loop.index }}] {{ chunk.source }} — {{ chunk.doc_type }} {{ chunk.fiscal_year }}, pg. {{ chunk.page }} [Relevance: {{ "%.3f"|format(chunk.score) }}]: "{{ chunk.content }}"
 {% endfor %}
 {% endif %}
 

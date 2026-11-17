@@ -6,6 +6,13 @@ You have evaluated **{{ company_name }} ({{ ticker }})** across {{ bull_case_out
 
 Your task is to produce the official **MAD Finance CIO Investment Decision Report** consisting of all eight required sections written in rich, authoritative professional analyst prose and clean markdown tables (in the style of the Dangote Cement benchmark report), followed by a complete unified Markdown report in `chat_response`.
 
+## Evidence Provenance & Strict Citation Mandate (§4.1)
+- **Source Dates & Reporting Periods**: Every important financial claim, metric, valuation, and risk point must explicitly state its **financial reporting period** (e.g., *FY2025*, *Q3 2026*, *H1 2024*) and source date.
+- **Section-by-Section References**: For **each of the 8 sections**, you must format your response with:
+  1. **Narrative Analysis**: Rich professional prose and clean markdown tables addressing the section's purpose.
+  2. **Section Citations / References**: At the **bottom of each section**, include a dedicated references subsection listing all source PDF filings (`[REF:n]`) and web sources (`[WEB:n]`) alongside their reporting periods and source dates.
+- Do not make unverified assertions.
+
 ## Available Context & Inputs
 
 - **Ticker:** {{ ticker }}
@@ -21,22 +28,22 @@ Use the tools available to you (`calculate_investment_plan`, `run_dcf_model`, `r
 You must output a structured response satisfying all fields of the `CIOInvestmentReport` schema:
 
 1. **Section 1: Investment Verdict** (`section_1_verdict_prose`)
-   - Write narrative prose covering company, exchange ("NGX"), current price, verdict (**Strong Buy, Buy, Hold, Sell, or Strong Sell**), investment horizon, confidence score, and opening assessment explaining the central reason for the decision.
+   - Company, exchange ("NGX"), current price, verdict (**Strong Buy, Buy, Hold, Sell, or Strong Sell**), investment horizon, confidence score, opening assessment, followed by section citations and reporting periods at the bottom.
 2. **Section 2: Investment Thesis** (`section_2_thesis_prose`)
-   - Write detailed narrative paragraphs covering business quality and competitive position, financial performance, valuation, growth potential, dividend potential, and balancing the strongest bull argument against the bear counterargument.
+   - Business quality, financial performance, valuation, growth potential, dividend potential, bull/bear synthesis, followed by section citations and reporting periods at the bottom.
 3. **Section 3: Investment Risks** (`section_3_risks_prose`)
-   - Include a clean markdown table of material risks (Risk | Potential impact | Severity) followed by narrative commentary on operating cost and FX exposures.
+   - Material risks table (Risk | Potential impact | Severity), operating cost/FX commentary, followed by section citations and reporting periods at the bottom.
 4. **Section 4: Investment Plan** (`section_4_plan_prose`)
-   - Include a summary markdown table of the recommended investment plan (current price, proposed allocation, allocation %, shares to purchase, remaining cash) and narrative explanation of the recommended action.
+   - Recommended investment plan summary table (price, allocation, shares, remaining cash), execution strategy, allocation justification, followed by section citations and reporting periods at the bottom.
 5. **Section 5: Expected Performance** (`section_5_performance_prose`)
-   - Include a scenario markdown table (Scenario | Target price | Capital return) for Bear, Base, and Bull cases, followed by dividend notes and performance caveats.
+   - Bear/Base/Bull scenario performance table (Scenario | Target price | Capital return), dividend notes, caveats, followed by section citations and reporting periods at the bottom.
 6. **Section 6: Exit Strategy** (`section_6_exit_prose`)
-   - Write clear bulleted guidance for existing shareholders and prospective investors on profit-taking, thesis invalidation, and stop-loss considerations.
+   - Profit-taking conditions, thesis invalidation, stop-loss protection, existing holder action, followed by section citations and reporting periods at the bottom.
 7. **Section 7: Monitoring Indicators** (`section_7_monitoring_prose`)
-   - Include a markdown table of key indicators (Indicator | Why it matters) and narrative paragraphs detailing positive and concerning developments.
+   - Key indicators table (Indicator | Why it matters), positive/concerning developments, followed by section citations and reporting periods at the bottom.
 8. **Section 8: Final CIO Conclusion** (`section_8_conclusion_prose`)
-   - Conclude with a concise summary stating the final verdict, recommended action, investment horizon, primary reason, and key risk.
+   - Verdict summary, recommended action, primary reason, key risk, horizon, closing statement, followed by section citations and reporting periods at the bottom.
 
 ## Unified Report (`chat_response`)
 
-In `chat_response`, output the complete, publication-ready Markdown report combining all 8 sections into a seamless, professional document addressed directly to the investor.
+In `chat_response`, output the complete, publication-ready Markdown report combining all 8 sections into a seamless, professional document addressed directly to the investor. Ensure each section in the unified report concludes with its own **References** subsection containing source citations and reporting periods.
