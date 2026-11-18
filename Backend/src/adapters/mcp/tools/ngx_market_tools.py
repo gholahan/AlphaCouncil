@@ -137,3 +137,31 @@ async def fetch_ngx_indices() -> list:
         return await _adapter.get_indices()
     except Exception as e:
         return [{"error": str(e)}]
+
+
+@tool
+async def get_company_profile(ticker: str) -> dict:
+    """
+    Gets company profile metadata for an NGX-listed stock: full company name,
+    sector, exchange, and currency. Use this to establish company context before
+    deeper analysis — avoids spending a RAG retrieval call for basic identification.
+
+    Args:
+        ticker: NGX stock ticker (e.g., "DANGCEM", "GTCO", "BUACEMENT")
+
+    Returns:
+        {ticker, company_name, sector, exchange, currency}
+    """
+    try:
+        info = await _adapter.get_company_info(ticker)
+        return {
+            "ticker": info.get("ticker", ticker.upper()),
+            "company_name": info.get("company_name", ticker.upper()),
+            "sector": info.get("sector"),
+            "exchange": info.get("exchange", "NGX"),
+            "currency": info.get("currency", "NGN"),
+            "status": "success",
+            "source": "KoboTerminal",
+        }
+    except Exception as e:
+        return {"ticker": ticker.upper(), "error": str(e)}

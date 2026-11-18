@@ -9,6 +9,7 @@ from src.adapters.mcp.tools.ngx_market_tools import (
     fetch_price_history,
     get_ngx_market_overview,
     fetch_ngx_indices,
+    get_company_profile,
 )
 from src.adapters.mcp.tools.cbn_scraper import get_cbn_fx_rates
 from src.adapters.mcp.tools.web_searcher import web_search_financial_context
@@ -36,6 +37,7 @@ TOOL_MAP: Dict[str, Any] = {
     "fetch_price_history": fetch_price_history,
     "get_ngx_market_overview": get_ngx_market_overview,
     "fetch_ngx_indices": fetch_ngx_indices,
+    "get_company_profile": get_company_profile,
     "get_cbn_fx_rates": get_cbn_fx_rates,
     "web_search_financial_context": web_search_financial_context,
     "run_dcf_model": run_dcf_model,
@@ -56,6 +58,7 @@ TOOL_MAP: Dict[str, Any] = {
 _ROLE_TOOLS: Dict[str, List[str]] = {
     "bull_analyst": [
         "retrieve_financial_insights",
+        "get_company_profile",
         "fetch_financial_ratios",
         "fetch_dividend_history",
         "fetch_price_history",
@@ -72,6 +75,7 @@ _ROLE_TOOLS: Dict[str, List[str]] = {
     ],
     "bear_analyst": [
         "retrieve_financial_insights",
+        "get_company_profile",
         "fetch_financial_ratios",
         "fetch_price_history",
         "get_cbn_fx_rates",
@@ -88,6 +92,7 @@ _ROLE_TOOLS: Dict[str, List[str]] = {
         "run_valuation_sensitivity",
     ],
     "arbitrator": [
+        "get_company_profile",
         "fetch_financial_ratios",
         "get_cbn_fx_rates",
         "run_dcf_model",
