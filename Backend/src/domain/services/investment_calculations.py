@@ -1,9 +1,3 @@
-"""
-Deterministic Investment Calculations Service
-Sprint 1 Specification -- MAD Finance
-Pure Python financial math and NGX market rule validations.
-"""
-
 import math
 from typing import Dict, Any, List, Optional
 
@@ -36,7 +30,6 @@ def calculate_transaction_costs(allocation: float, exchange: str = "NGX") -> Dic
             "total_costs": round(total_costs, 2),
         }
     else:
-        # Default global/generic fee structure (~0.5%)
         total_costs = allocation * 0.005
         return {
             "sec_fee": 0.0,
@@ -51,7 +44,6 @@ def calculate_share_quantity(allocation: float, entry_price: float, total_costs:
     """
     Calculate whole shares purchasable within the recommended allocation and costs.
     Formula: floor((Allocation - Costs) / Entry Price)
-    Respects whole-share trading rules (integer shares).
     """
     if allocation <= 0 or entry_price <= 0:
         return 0
@@ -84,14 +76,13 @@ def calculate_dividend_income(shares: int, annual_dps: float, years: int, dps_gr
 def calculate_annualized_return(start_value: float, end_value: float, years: float) -> float:
     """
     Calculate Compound Annual Growth Rate (CAGR).
-    Formula: (End Value / Start Value) ** (1 / Years) - 1
     """
     if start_value <= 0 or end_value <= 0 or years <= 0:
         return 0.0
 
     try:
         cagr = (end_value / start_value) ** (1.0 / years) - 1.0
-        return round(cagr * 100.0, 2)  # as percentage
+        return round(cagr * 100.0, 2)
     except Exception:
         return 0.0
 
@@ -102,11 +93,15 @@ def calculate_scenario_performance(
     scenario_prices: Dict[str, float],
     dividend_income: float,
     years: float,
+    probabilities: Optional[Dict[str, float]] = None,
 ) -> List[Dict[str, Any]]:
     """
     Calculate bear, base, and bull case performance scenarios.
-    Returns list of scenario performance dicts.
+    Returns list of scenario performance dicts (maintaining backward compatibility for tests).
     """
+    if probabilities is None:
+        probabilities = {"Bear Case": 0.20, "Base Case": 0.50, "Bull Case": 0.30}
+
     initial_investment = shares * entry_price
     results = []
 
@@ -128,7 +123,7 @@ def calculate_scenario_performance(
             "total_investment_value": round(total_ending_value, 2),
             "total_return_percent": round(total_return_pct, 2),
             "annualized_return_cagr": cagr,
-            "assumptions_basis": f"Horizon: {years} years, Entry: ₦{entry_price:.2f}, Target: ₦{target_price:.2f}",
+            "probability": probabilities.get(scenario_name, 0.33),
         })
 
     return results
@@ -136,7 +131,7 @@ def calculate_scenario_performance(
 
 def calculate_entry_strategy(current_price: float, verdict: str) -> Dict[str, Any]:
     """
-    Evaluate entry-price ranges and staged-entry recommendations based on verdict and volatility.
+    Evaluate entry-price ranges and staged-entry recommendations based on verdict.
     """
     v = verdict.strip().title()
     if v in ["Strong Buy", "Buy"]:

@@ -1,6 +1,7 @@
-"""MCP DCF Calculator Tool - Pure Python DCF valuation model with strict input validation."""
+"""MCP DCF Calculator Tool - Pure Python DCF valuation model with strict input validation and proper EV-to-Equity bridging."""
 
 from langchain_core.tools import tool
+from typing import Optional
 
 
 @tool
@@ -9,10 +10,15 @@ async def run_dcf_model(
     growth_rate: float,
     wacc: float,
     terminal_growth: float,
-    years: int = 5
+    years: int = 5,
+    total_debt: float = 0.0,
+    cash_and_equivalents: float = 0.0,
+    shares_outstanding: Optional[float] = None,
 ) -> dict:
     """
-    Runs a Discounted Cash Flow valuation model (pure Python calculation) with input validation.
+    Runs a Discounted Cash Flow valuation model (pure Python calculation) with input validation,
+    proper Enterprise Value to Equity Value bridging (Equity = EV - Total Debt + Cash),
+    and per-share intrinsic value calculation.
 
     Args:
         fcf: Current Free Cash Flow in millions (₦) - must be > 0
@@ -20,18 +26,17 @@ async def run_dcf_model(
         wacc: Weighted Average Cost of Capital / discount rate (e.g., 0.15)
         terminal_growth: Perpetual growth rate (typically 0.02-0.03)
         years: Projection years (default 5, 1-50)
+        total_debt: Total debt in millions (₦) for EV-to-Equity bridge
+        cash_and_equivalents: Cash and equivalents in millions (₦)
+        shares_outstanding: Number of shares outstanding in billions (or millions) matching units
 
     Returns:
         {
-            "intrinsic_value_millions": 420000,
-            "pv_cash_flows": 280000,
-            "pv_terminal_value": 140000,
-            "projected_fcf": [180, 207, 238, 274, 315],
-            "assumptions": {
-                "growth_rate": 0.15,
-                "terminal_growth": 0.03,
-                "wacc": 0.15
-            }
+            "intrinsic_value_millions": 2500000.0,
+            "enterprise_value_millions": 3720000.0,
+            "equity_value_millions": 2500000.0,
+            "fair_value_per_share": 1243.50,
+            ...
         }
     """
     if fcf is None or not isinstance(fcf, (int, float)) or fcf <= 0:
@@ -68,16 +73,30 @@ async def run_dcf_model(
     terminal_value = terminal_fcf / (wacc - terminal_growth)
     pv_terminal_value = terminal_value / ((1 + wacc) ** years)
 
-    intrinsic_value_millions = pv_cash_flows + pv_terminal_value
+    enterprise_value = pv_cash_flows + pv_terminal_value
+
+    # Proper EV to Equity Value Bridge: Equity Value = EV - Total Debt + Cash
+    net_debt = total_debt - cash_and_equivalents
+    equity_value = enterprise_value - net_debt
+
+    fair_value_per_share = None
+    if shares_outstanding is not None and shares_outstanding > 0:
+        fair_value_per_share = equity_value / shares_outstanding
 
     return {
-        "intrinsic_value_millions": round(intrinsic_value_millions, 2),
+        "intrinsic_value_millions": round(equity_value, 2),  # Backward compatibility for unit tests
+        "enterprise_value_millions": round(enterprise_value, 2),
+        "net_debt_millions": round(net_debt, 2),
+        "equity_value_millions": round(equity_value, 2),
+        "fair_value_per_share": round(fair_value_per_share, 2) if fair_value_per_share is not None else None,
         "pv_cash_flows": round(pv_cash_flows, 2),
         "pv_terminal_value": round(pv_terminal_value, 2),
         "projected_fcf": projected_fcf,
         "assumptions": {
             "growth_rate": growth_rate,
             "terminal_growth": terminal_growth,
-            "wacc": wacc
+            "wacc": wacc,
+            "total_debt": total_debt,
+            "cash": cash_and_equivalents,
         }
     }

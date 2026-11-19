@@ -1,6 +1,6 @@
-"""MCP Web Search Tool - LangGraph-compatible tool for Tavily search with rich citation metadata."""
+"""MCP Web Search Tool - LangGraph-compatible tool for Tavily search with clean citation formatting."""
 
-from typing import Dict, Any, Optional
+from typing import Optional
 from langchain_core.tools import tool
 from src.adapters.web_search.tavily_client import TavilySearchAdapter
 
@@ -23,7 +23,7 @@ async def web_search_financial_context(
 ) -> str:
     """
     Search the web for recent financial news and context about a company or topic.
-    Returns results with complete source publisher domains, URLs, publication dates, and snippets.
+    Returns results with clean URLs and snippet content.
 
     Args:
         query: What to search for (e.g., "earnings report", "CEO change", "debt refinancing")
@@ -31,7 +31,7 @@ async def web_search_financial_context(
         days_back: How many days back to search (default 7)
 
     Returns:
-        Formatted search results with [WEB:n] citation markers, exact URLs, and publishers.
+        Formatted search results with ChatGPT-style markers [1], [2], clean URLs, and snippets.
     """
     adapter = get_search_adapter()
     search_query = f"{ticker} {query}" if ticker else query
@@ -42,15 +42,11 @@ async def web_search_financial_context(
         days_back=days_back,
     )
 
-    formatted_output = [f"Search query: {search_query}\n"]
-    formatted_output.append(f"Found {len(results)} verified web results:\n")
+    formatted_output = [f"Web search results for: {search_query}\n"]
 
     for idx, res in enumerate(results, start=1):
-        pub_date = f" | Date: {res.published_date}" if res.published_date else ""
-        score_str = f" | Relevance: {res.relevance_score:.3f}" if res.relevance_score else ""
-        formatted_output.append(f"\n[WEB:{idx}] {res.title}")
-        formatted_output.append(f"Source Publisher: {res.source}{pub_date}{score_str}")
+        formatted_output.append(f"[{idx}] {res.title}")
         formatted_output.append(f"URL: {res.url}")
-        formatted_output.append(f"Content: \"{res.snippet}\"\n")
+        formatted_output.append(f"Snippet: \"{res.snippet}\"\n")
 
     return "\n".join(formatted_output)

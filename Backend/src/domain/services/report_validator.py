@@ -4,7 +4,7 @@ Sprint 1 Specification -- MAD Finance
 Validates financial reconciliation, verdict-to-action consistency, and report completeness.
 """
 
-from typing import Dict, Any, List
+from typing import List
 from src.domain.models.cio_report import CIOInvestmentReport
 
 

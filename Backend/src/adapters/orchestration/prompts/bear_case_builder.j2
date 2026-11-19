@@ -5,7 +5,7 @@ Your mandate: Build the BEAR case for {{ company_name }} ({{ ticker }}).
 {% if financial_context %}
 **Retrieved Financial Document Excerpts (RAG Context from pgvector & Voyage AI Reranker):**
 {% for chunk in financial_context %}
-- [REF:{{ loop.index }}] {{ chunk.source }} — {{ chunk.doc_type }} {{ chunk.fiscal_year }}, pg. {{ chunk.page }} [Relevance: {{ "%.3f"|format(chunk.score) }}]: "{{ chunk.content }}"
+- [{{ loop.index }}] {{ chunk.source }} — {{ chunk.doc_type }} {{ chunk.fiscal_year }}, pg. {{ chunk.page }}: "{{ chunk.content }}"
 {% endfor %}
 {% endif %}
 
@@ -44,7 +44,7 @@ Your mandate: Build the BEAR case for {{ company_name }} ({{ ticker }}).
 11. `web_search_financial_context(query, ticker)` — recent news on risks, competition, regulation
 
 **Evidence requirements:**
-- Every claim needs [REF:n] or [WEB:n] citation
+- Every claim needs a clean bracket citation (`[1]`, `[2]`, etc.)
 - When challenging the bull's claims, cite the same source with different interpretation OR cite contradictory evidence
 - Use specific numbers: debt-to-equity of 1.8x (not "high debt"), interest coverage dropped from 4.2x to 3.1x
 
@@ -53,22 +53,22 @@ Your mandate: Build the BEAR case for {{ company_name }} ({{ ticker }}).
 ## Bear Thesis: {{ company_name }} ({{ ticker }})
 
 ### Counter-Analysis: Challenging the Bull Case
-[Point-by-point response to bull's key claims, with counter-evidence and citations]
+[Point-by-point response to bull's key claims, with counter-evidence and clean citations]
 
 ### Leverage & Financial Health Concerns
-[Analyze debt levels, interest coverage, refinancing risks, cash flow quality with citations]
+[Analyze debt levels, interest coverage, refinancing risks, cash flow quality with clean citations]
 
 ### Margin Pressure & Profitability Risks
-[Analyze declining margins, rising costs, operating leverage risks with citations]
+[Analyze declining margins, rising costs, operating leverage risks with clean citations]
 
 ### Competitive & Market Risks
-[Analyze competitive threats, pricing power erosion, market share trends with citations]
+[Analyze competitive threats, pricing power erosion, market share trends with clean citations]
 
 ### Regulatory & Macro Headwinds
-[Analyze CBN policy, FX exposure, inflation impact, sector regulations with citations]
+[Analyze CBN policy, FX exposure, inflation impact, sector regulations with clean citations]
 
 ### Additional Hidden Risks
-[Surface risks not addressed in bull thesis: governance, accounting, management with citations]
+[Surface risks not addressed in bull thesis: governance, accounting, management with clean citations]
 
 ### Risk Summary
 [2-3 sentence synthesis of why this is NOT a buy, or what conditions must be met before considering]

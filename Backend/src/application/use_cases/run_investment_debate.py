@@ -12,7 +12,7 @@ from src.application.use_cases.query_financial_data import QueryFinancialDataUse
 
 logger = logging.getLogger(__name__)
 
-_CITATION_RE = re.compile(r'\[(?:REF|WEB):\d+|[^\]]+\.pdf[^\]]*\]')
+_CITATION_RE = re.compile(r'\[\d+\]')
 
 
 def _extract_citations(content: str) -> List[str]:

@@ -3,6 +3,7 @@
 import logging
 import json
 import re
+from datetime import datetime, timezone
 from typing import Dict, Any, Optional, Literal, List
 from pydantic import BaseModel, Field
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, ToolMessage
@@ -274,6 +275,19 @@ class LangGraphDebateEngine:
         full_bull = "\n\n".join([f"### Bull Case - Round {i+1}\n{o}" for i, o in enumerate(bull_outputs)])
         full_bear = "\n\n".join([f"### Bear Case - Round {i+1}\n{o}" for i, o in enumerate(bear_outputs)])
 
+        bull_rounds = len(bull_outputs)
+        bear_rounds = len(bear_outputs)
+        total_rounds = state.get("round_count", max(bull_rounds, bear_rounds, 1))
+
+        report_context = {
+            "generated_at": datetime.now(timezone.utc).strftime("%B %Y"),
+            "market_data_as_of": price_timestamp.strftime("%B %Y") if price_timestamp else datetime.now(timezone.utc).strftime("%B %Y"),
+            "ticker": ticker,
+            "bull_rounds": bull_rounds,
+            "bear_rounds": bear_rounds,
+            "total_debate_rounds": total_rounds,
+        }
+
         system_prompt = build_agent_prompt(
             role=AgentRole.ARBITRATOR,
             ticker=ticker,
@@ -284,6 +298,7 @@ class LangGraphDebateEngine:
             capital=capital,
             risk_tolerance=risk_tolerance,
             current_price=current_price,
+            report_context=report_context,
             verdict="",  # placeholder so Jinja doesn't error on undefined
         )
 

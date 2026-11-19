@@ -20,8 +20,8 @@ async def retrieve_financial_insights(ticker: str, query: str) -> List[str]:
         query: What to search for (e.g., "revenue growth trends")
 
     Returns:
-        List of reranked chunks formatted with exact PDF filename, section, and page citations:
-        `[REF:n] filename.pdf — 10-K FY2025 (Section: MD&A), pg. 42 [Relevance: 0.941]: "..."`
+        List of reranked chunks formatted with clean citations:
+        `[1] Document Name · FY2025: "..."`
     """
     from src.adapters.storage.vector_store import PgVectorStore
     from src.adapters.embeddings.voyage_embedding import VoyageAIEmbeddingAdapter
@@ -59,23 +59,20 @@ async def retrieve_financial_insights(ticker: str, query: str) -> List[str]:
         top_k=5
     )
 
-    # Step 4: Construct final formatted chunks with comprehensive metadata and PDF traceability
+    # Step 4: Construct clean formatted chunks without fake "Page 1" defaults
     formatted_chunks = []
     for idx, (doc_idx, score) in enumerate(reranked_indices_scores, start=1):
         res = candidates[doc_idx]
-        pdf_name = res.metadata.get("pdf_name", "Financial Document")
-        doc_type = res.metadata.get("doc_type", "Annual Report")
+        pdf_name = res.metadata.get("pdf_name", "Financial Document").replace(".pdf", "").replace("_", " ").title()
         fiscal_year = res.metadata.get("fiscal_year", "FY2025")
-        quarter = res.metadata.get("quarter", "")
-        section = res.metadata.get("section", "General")
-        page_num = res.metadata.get("page_number", "?")
+        page_num = res.metadata.get("page_number")
         content = res.content
 
-        q_str = f" {quarter}" if quarter else ""
-        sec_str = f" (Section: {section})" if section else ""
+        page_str = f" | Page {page_num}" if page_num and page_num != "?" else ""
+        fy_str = f" · FY{fiscal_year}" if fiscal_year else ""
 
         formatted_chunks.append(
-            f'[REF:{idx}] {pdf_name} — {doc_type} {fiscal_year}{q_str}{sec_str}, pg. {page_num} [Relevance: {score:.3f}]: "{content}"'
+            f'[{idx}] {pdf_name}{page_str}{fy_str}: "{content}"'
         )
 
     _cache[cache_key] = (formatted_chunks, time.time() + _TTL)

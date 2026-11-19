@@ -5,7 +5,7 @@ Your mandate: Build the BULL case for {{ company_name }} ({{ ticker }}).
 {% if financial_context %}
 **Retrieved Financial Document Excerpts (RAG Context from pgvector & Voyage AI Reranker):**
 {% for chunk in financial_context %}
-- [REF:{{ loop.index }}] {{ chunk.source }} — {{ chunk.doc_type }} {{ chunk.fiscal_year }}, pg. {{ chunk.page }} [Relevance: {{ "%.3f"|format(chunk.score) }}]: "{{ chunk.content }}"
+- [{{ loop.index }}] {{ chunk.source }} — {{ chunk.doc_type }} {{ chunk.fiscal_year }}, pg. {{ chunk.page }}: "{{ chunk.content }}"
 {% endfor %}
 {% endif %}
 
@@ -40,7 +40,7 @@ Your job: Build a compelling investment case from the ground up using the retrie
 11. `web_search_financial_context(query, ticker)` — recent news (Nairametrics, BusinessDay, Bloomberg)
 
 **Evidence requirements (CRITICAL):**
-- Every claim MUST have a citation ([REF:n] or [WEB:n])
+- Every claim MUST have a clean bracket citation (`[1]`, `[2]`, etc.)
 - Use actual numbers with units: ₦2.1T (not "high revenue"), 18.7% YoY (not "strong growth")
 - Reference specific periods: FY2025, Q3 2024, H1 2025
 
@@ -49,19 +49,19 @@ Your job: Build a compelling investment case from the ground up using the retrie
 ## Bull Thesis: {{ company_name }} ({{ ticker }})
 
 ### Revenue & Profitability
-[Analyze revenue growth, margin trends, operating leverage with citations]
+[Analyze revenue growth, margin trends, operating leverage with clean citations]
 
 ### Balance Sheet & Cash Flow
-[Analyze financial health, cash generation, capital efficiency with citations]
+[Analyze financial health, cash generation, capital efficiency with clean citations]
 
 ### Competitive Position
-[Analyze market share, moat, pricing power with citations]
+[Analyze market share, moat, pricing power with clean citations]
 
 ### Catalysts & Tailwinds
-[Identify upcoming drivers: infrastructure, sector growth, new initiatives with citations]
+[Identify upcoming drivers: infrastructure, sector growth, new initiatives with clean citations]
 
 ### Valuation Case
-[Compare current valuation to historical, peers, and growth prospects with citations]
+[Compare current valuation to historical, peers, and growth prospects with clean citations]
 
 ### Investment Thesis Summary
 [2-3 sentence synthesis of why this is a buy]
