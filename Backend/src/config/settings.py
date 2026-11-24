@@ -4,8 +4,17 @@ import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Optional, List
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings
 from pydantic import Field, field_validator
+
+
+# Explicitly load .env with override=True so local .env file takes precedence over stale OS env vars
+for parent_dir in [Path(__file__).resolve().parent.parent, Path(__file__).resolve().parent.parent.parent]:
+    env_file = parent_dir / ".env"
+    if env_file.exists():
+        load_dotenv(dotenv_path=env_file, override=True)
+        break
 
 
 class Settings(BaseSettings):

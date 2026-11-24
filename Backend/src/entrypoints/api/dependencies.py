@@ -14,6 +14,53 @@ from src.adapters.storage.models import UserRecord
 security = HTTPBearer(auto_error=False)
 
 
+async def get_current_user_from_token_string(
+    token: str,
+    session: AsyncSession,
+) -> UserRecord:
+    """Validate token string (JWT or user ID) and return UserRecord."""
+    try:
+        parts = token.split(".")
+        user_id_or_email = None
+        if len(parts) == 3:
+            payload_segment = parts[1]
+            padded = payload_segment + "=" * (-len(payload_segment) % 4)
+            payload_bytes = base64.urlsafe_b64decode(padded.encode("utf-8"))
+            payload = json.loads(payload_bytes.decode("utf-8"))
+            user_id_or_email = payload.get("sub") or payload.get("email") or payload.get("id")
+        else:
+            user_id_or_email = token
+
+        if not user_id_or_email:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication token payload.",
+            )
+
+        query = select(UserRecord).where(
+            (UserRecord.email == user_id_or_email)
+            | (UserRecord.id.cast(str) == str(user_id_or_email))
+        )
+        result = await session.execute(query)
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="User not found in system. Please register or sign in.",
+            )
+
+        return user
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Authentication failed: {str(e)}",
+        )
+
+
 async def get_current_user(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
     session: AsyncSession = Depends(get_session),
@@ -39,49 +86,28 @@ async def get_current_user(
         await session.refresh(demo_user)
         return demo_user
 
-    token = credentials.credentials
-    try:
-        # Attempt to parse JWT payload (header.payload.signature)
-        parts = token.split(".")
-        user_id_or_email = None
-        if len(parts) == 3:
-            payload_segment = parts[1]
-            padded = payload_segment + "=" * (-len(payload_segment) % 4)
-            payload_bytes = base64.urlsafe_b64decode(padded.encode("utf-8"))
-            payload = json.loads(payload_bytes.decode("utf-8"))
-            user_id_or_email = payload.get("sub") or payload.get("email") or payload.get("id")
-        else:
-            user_id_or_email = token
+    return await get_current_user_from_token_string(credentials.credentials, session)
 
-        if not user_id_or_email:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication token payload.",
-            )
 
-        # Query user by ID or email
-        query = select(UserRecord).where(
-            (UserRecord.email == user_id_or_email)
-            | (UserRecord.id.cast(str) == str(user_id_or_email))
-        )
-        result = await session.execute(query)
-        user = result.scalar_one_or_none()
+async def get_current_user_for_sse(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    token: Optional[str] = None,
+    session: AsyncSession = Depends(get_session),
+) -> UserRecord:
+    """
+    Authenticate user for SSE streams via Authorization header or query parameter 'token'.
+    Crucial for browser EventSource durability where custom headers cannot be set.
+    """
+    raw_token = None
+    if credentials:
+        raw_token = credentials.credentials
+    elif token:
+        raw_token = token
 
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="User not found in system. Please register or sign in.",
-            )
+    if not raw_token:
+        return await get_current_user(None, session)
 
-        return user
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail=f"Authentication failed: {str(e)}",
-        )
+    return await get_current_user_from_token_string(raw_token, session)
 
 
 async def get_optional_current_user(

@@ -59,6 +59,7 @@ async def run_investment_debate(
         risk_tolerance=risk_tolerance,
         current_price=current_price,
         max_rounds=max_rounds,
+        run_id=self.request.id,
     )
 
     return result

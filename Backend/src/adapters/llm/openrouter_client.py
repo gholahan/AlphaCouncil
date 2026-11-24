@@ -24,6 +24,7 @@ class OpenRouterClientAdapter(LLMClient):
             temperature=temperature,
             openai_api_key=self.api_key,
             openai_api_base="https://openrouter.ai/api/v1",
+            stream_chunk_timeout=None,
             default_headers={
                 "HTTP-Referer": "https://alphacouncil.app",
                 "X-Title": "AlphaCouncil Investment Platform",

@@ -8,6 +8,7 @@ from langchain_core.messages import BaseMessage
 class DebateState(TypedDict):
     """State graph structure for the investment debate workflow with accumulation."""
 
+    run_id: Optional[str]
     ticker: str
     company_name: str
     user_thesis: Optional[str]

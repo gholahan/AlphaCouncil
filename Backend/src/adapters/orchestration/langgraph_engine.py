@@ -10,6 +10,7 @@ from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, Tool
 from langgraph.graph import StateGraph, END
 
 from src.adapters.orchestration.debate_state import DebateState
+from src.adapters.orchestration.stream_manager import stream_manager
 from src.adapters.orchestration.personas import AgentRole
 from src.adapters.orchestration.prompt_reader import build_agent_prompt
 from src.adapters.orchestration.tool_registry import get_tools_for_role_objects, TOOL_MAP
@@ -219,17 +220,34 @@ class LangGraphDebateEngine:
         response = await llm_with_tools.ainvoke(messages)
         output_content = response.content or ""
 
+        run_id = state.get("run_id")
         if hasattr(response, "tool_calls") and response.tool_calls:
             messages.append(response)
             for tc in response.tool_calls:
                 tool_fn = TOOL_MAP.get(tc["name"])
                 if tool_fn:
                     logger.info(f"[{role_name}] Tool called: {tc['name']} with args {tc['args']}")
+                    if run_id:
+                        await stream_manager.add_event(
+                            run_id=run_id,
+                            event_type="tool_start",
+                            node_name=role.value,
+                            tool_name=tc["name"],
+                            tool_args=tc["args"]
+                        )
                     try:
                         tool_result = await tool_fn.ainvoke(tc["args"])
                     except Exception as e:
                         logger.error(f"[{role_name}] Tool {tc['name']} error: {e}")
                         tool_result = {"error": str(e)}
+                    if run_id:
+                        await stream_manager.add_event(
+                            run_id=run_id,
+                            event_type="tool_end",
+                            node_name=role.value,
+                            tool_name=tc["name"],
+                            tool_result=str(tool_result)[:500]
+                        )
                     messages.append(ToolMessage(content=str(tool_result), tool_call_id=tc["id"]))
 
             final_response = await llm_with_tools.ainvoke(messages)
@@ -310,6 +328,7 @@ class LangGraphDebateEngine:
             HumanMessage(content=f"Deliver final investment verdict for {company_name} ({ticker}) after {len(bull_outputs)} rounds of debate.")
         ]
 
+        run_id = state.get("run_id")
         # Bounded tool execution loop (max 3 iterations)
         for _ in range(3):
             response = await llm_with_tools.ainvoke(messages)
@@ -319,11 +338,27 @@ class LangGraphDebateEngine:
                     tool_fn = TOOL_MAP.get(tc["name"])
                     if tool_fn:
                         logger.info(f"[CIO Arbitrator] Tool called: {tc['name']} with args {tc['args']}")
+                        if run_id:
+                            await stream_manager.add_event(
+                                run_id=run_id,
+                                event_type="tool_start",
+                                node_name="arbitrator",
+                                tool_name=tc["name"],
+                                tool_args=tc["args"]
+                            )
                         try:
                             tool_result = await tool_fn.ainvoke(tc["args"])
                         except Exception as e:
                             logger.error(f"[CIO Arbitrator] Tool {tc['name']} error: {e}")
                             tool_result = {"error": str(e)}
+                        if run_id:
+                            await stream_manager.add_event(
+                                run_id=run_id,
+                                event_type="tool_end",
+                                node_name="arbitrator",
+                                tool_name=tc["name"],
+                                tool_result=str(tool_result)[:500]
+                            )
                         messages.append(ToolMessage(content=str(tool_result), tool_call_id=tc["id"]))
                 continue
             else:
@@ -375,6 +410,7 @@ class LangGraphDebateEngine:
         risk_tolerance: str = "Moderate",
         current_price: Optional[float] = None,
         max_rounds: Optional[int] = None,
+        run_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Execute MAD workflow.
@@ -382,7 +418,11 @@ class LangGraphDebateEngine:
         Returns:
             Dict with bull_case_history, bear_case_history, verdict, rounds_completed
         """
+        import uuid
+        run_id = run_id or str(uuid.uuid4())
+
         initial_state: DebateState = {
+            "run_id": run_id,
             "ticker": ticker.upper(),
             "company_name": company_name or ticker.upper(),
             "user_thesis": user_thesis,
@@ -404,22 +444,110 @@ class LangGraphDebateEngine:
             "next_agent": None,
         }
 
-        logger.info(f"[Debate Engine] Starting MAD for {ticker.upper()} (max {initial_state['max_rounds']} rounds)")
-        result_state = await self.workflow.ainvoke(initial_state)
+        logger.info(f"[Debate Engine] Starting MAD for {ticker.upper()} (run_id: {run_id}, max {initial_state['max_rounds']} rounds)")
+        return await self.stream_run(run_id, initial_state)
 
-        return {
-            "ticker": result_state["ticker"],
-            "company_name": result_state["company_name"],
-            "bull_case_history": result_state.get("bull_case_outputs", []),
-            "bear_case_history": result_state.get("bear_case_outputs", []),
-            "verdict": result_state.get("verdict"),
-            "recommendation": result_state.get("recommendation"),
-            "arbitrator_output": result_state.get("arbitrator_output"),
-            "chat_response": result_state.get("chat_response"),
-            "rounds_completed": result_state.get("round_count", 0),
-            "messages": result_state.get("messages", []),
-            "metadata": result_state.get("metadata", {}),
-        }
+    async def stream_run(
+        self,
+        run_id: str,
+        initial_state: DebateState,
+    ) -> Dict[str, Any]:
+        """
+        Execute MAD workflow with astream_events, streaming normalized events to stream_manager.
+        """
+        from src.adapters.orchestration.stream_manager import stream_manager
+
+        current_node = None
+        originating_node = None
+        final_state = initial_state
+
+        try:
+            async for event in self.workflow.astream_events(initial_state, version="v2"):
+                kind = event.get("event")
+                name = event.get("name")
+
+                # Filter for our graph nodes: supervisor, analyst, arbitrator
+                if name in ["supervisor", "analyst", "arbitrator"]:
+                    target_node_name = name
+                    if name == "analyst":
+                        target_node_name = final_state.get("next_agent") or "bull_analyst"
+
+                    if kind == "on_chain_start":
+                        originating_node = current_node
+                        current_node = target_node_name
+                        await stream_manager.add_event(
+                            run_id=run_id,
+                            event_type="node_start",
+                            node_name=current_node,
+                            originating_node=originating_node,
+                            data={"input": event.get("data", {}).get("input")}
+                        )
+                    elif kind == "on_chain_end":
+                        output_data = event.get("data", {}).get("output")
+                        if isinstance(output_data, dict):
+                            final_state.update(output_data)
+                            if name == "analyst":
+                                target_node_name = final_state.get("next_agent") or target_node_name
+                        await stream_manager.add_event(
+                            run_id=run_id,
+                            event_type="node_end",
+                            node_name=target_node_name,
+                            originating_node=originating_node,
+                            data={"output_summary": str(output_data)[:200] if output_data else ""}
+                        )
+
+                # Tool events inside nodes
+                elif kind == "on_tool_start":
+                    tool_name = name
+                    tool_args = event.get("data", {}).get("input")
+                    await stream_manager.add_event(
+                        run_id=run_id,
+                        event_type="tool_start",
+                        node_name=current_node,
+                        tool_name=tool_name,
+                        tool_args=tool_args
+                    )
+                elif kind == "on_tool_end":
+                    tool_name = name
+                    tool_result = event.get("data", {}).get("output")
+                    await stream_manager.add_event(
+                        run_id=run_id,
+                        event_type="tool_end",
+                        node_name=current_node,
+                        tool_name=tool_name,
+                        tool_result=str(tool_result)[:500] if tool_result else None
+                    )
+
+            # Store final state
+            result_dict = {
+                "ticker": final_state.get("ticker"),
+                "company_name": final_state.get("company_name"),
+                "bull_case_history": final_state.get("bull_case_outputs", []),
+                "bear_case_history": final_state.get("bear_case_outputs", []),
+                "verdict": final_state.get("verdict"),
+                "recommendation": final_state.get("recommendation"),
+                "arbitrator_output": final_state.get("arbitrator_output"),
+                "chat_response": final_state.get("chat_response"),
+                "rounds_completed": final_state.get("round_count", 0),
+                "messages": final_state.get("messages", []),
+                "metadata": final_state.get("metadata", {}),
+            }
+            await stream_manager.set_state(run_id, result_dict)
+            await stream_manager.add_event(
+                run_id=run_id,
+                event_type="run_complete",
+                data={"verdict": result_dict["verdict"]}
+            )
+            return result_dict
+
+        except Exception as e:
+            logger.error(f"[Debate Stream] Run {run_id} failed: {e}", exc_info=True)
+            await stream_manager.add_event(
+                run_id=run_id,
+                event_type="run_error",
+                data={"error": str(e)}
+            )
+            raise
 
 
 LangGraphMADEngine = LangGraphDebateEngine

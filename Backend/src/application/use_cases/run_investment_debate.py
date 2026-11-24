@@ -43,11 +43,15 @@ class RunInvestmentDebateUseCase:
         risk_tolerance: str = "moderate",
         current_price: Optional[float] = None,
         max_rounds: int = 3,
+        run_id: Optional[str] = None,
     ) -> Dict[str, Any]:
         ticker = ticker.upper()
         start_time = datetime.utcnow()
+        effective_run_id = run_id or f"run_{ticker}_{int(start_time.timestamp())}"
 
-        logger.info(f"Starting MAD debate for {ticker} - Capital: {capital_to_deploy:,.0f} NGN")
+        from src.adapters.orchestration.stream_manager import stream_manager
+        logger.info(f"Starting MAD debate for {ticker} (run_id: {effective_run_id}) - Capital: {capital_to_deploy:,.0f} NGN")
+        await stream_manager.add_event(effective_run_id, event_type="system_status", data={"message": f"Starting MAD debate for {ticker} — Capital: ₦{capital_to_deploy:,.0f}"})
 
         try:
             # Step 0: Fetch live market price from KoboTerminal if not provided
@@ -62,6 +66,7 @@ class RunInvestmentDebateUseCase:
                         current_price = quote.price
                         price_timestamp = quote.timestamp
                         logger.info(f"Fetched live price for {ticker} from KoboTerminal: ₦{current_price} (timestamp: {price_timestamp})")
+                        await stream_manager.add_event(effective_run_id, event_type="system_status", data={"message": f"Fetched live price for {ticker}: ₦{current_price:,.2f}"})
                 except Exception as e:
                     logger.warning(f"Failed to fetch live price from KoboTerminal for {ticker}: {e}")
 
@@ -73,6 +78,7 @@ class RunInvestmentDebateUseCase:
                 "risk_tolerance": risk_tolerance,
             })
             logger.info(f"Created debate record: {debate_id}")
+            await stream_manager.add_event(effective_run_id, event_type="system_status", data={"message": f"Created database debate record ({debate_id[:8]})"})
 
             # Step 2: Company metadata
             company = await self.company_repo.get_by_ticker(ticker)
@@ -82,6 +88,7 @@ class RunInvestmentDebateUseCase:
 
             # Step 3: RAG retrieval
             logger.info(f"[1/3] Querying financial data for {ticker}")
+            await stream_manager.add_event(effective_run_id, event_type="system_status", data={"message": f"[1/3] Querying financial data & searching vector store for {ticker}..."})
             context_query = (
                 f"Given the thesis: {user_thesis}, provide relevant financial data and analysis"
                 if user_thesis else
@@ -103,9 +110,11 @@ class RunInvestmentDebateUseCase:
                 for chunk in financial_context["chunks"]
             ]
             logger.info(f"Retrieved {len(financial_chunks)} financial chunks with full PDF traceability")
+            await stream_manager.add_event(effective_run_id, event_type="system_status", data={"message": f"Retrieved {len(financial_chunks)} financial chunks with full PDF traceability"})
 
             # Step 4: Run MAD debate
             logger.info(f"[2/3] Running MAD debate (max {max_rounds} rounds)")
+            await stream_manager.add_event(effective_run_id, event_type="system_status", data={"message": f"[2/3] Running MAD debate (max {max_rounds} rounds)..."})
             debate_result = await self.mad_engine.run_debate(
                 ticker=ticker,
                 company_name=company_name,
@@ -115,6 +124,7 @@ class RunInvestmentDebateUseCase:
                 risk_tolerance=risk_tolerance,
                 current_price=current_price,
                 max_rounds=max_rounds,
+                run_id=effective_run_id,
             )
 
             # Step 5: Extract verdict and recommendation
